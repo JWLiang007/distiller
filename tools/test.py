@@ -14,6 +14,7 @@ from mmdet.apis import multi_gpu_test, single_gpu_test
 from mmdet.datasets import (build_dataloader, build_dataset,
                             replace_ImageToTensor)
 from mmdet.models import build_detector
+from mmdet.distillation import build_distiller
 
 
 def parse_args():
@@ -170,7 +171,20 @@ def main():
 
     # build the model and load checkpoint
     cfg.model.train_cfg = None
-    model = build_detector(cfg.model, test_cfg=cfg.get('test_cfg'))
+    distiller_cfg = cfg.get('distiller', None)
+    if distiller_cfg is None:
+        model = build_detector(
+            cfg.model,
+            test_cfg=cfg.get('test_cfg'))
+    else:
+        teacher_cfg = Config.fromfile(cfg.teacher_cfg)
+        student_cfg = Config.fromfile(cfg.student_cfg)
+
+        model = build_distiller(cfg.distiller, teacher_cfg, student_cfg,
+                                train_cfg=student_cfg.get('train_cfg'),
+                                test_cfg=student_cfg.get('test_cfg'))
+
+    # model = build_detector(cfg.model, test_cfg=cfg.get('test_cfg'))
     fp16_cfg = cfg.get('fp16', None)
     if fp16_cfg is not None:
         wrap_fp16_model(model)

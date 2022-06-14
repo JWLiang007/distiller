@@ -3,9 +3,9 @@ import torch.nn.functional as F
 import torch
 from mmdet.models.detectors.base import BaseDetector
 from mmdet.models import build_detector
-from mmcv.runner import  load_checkpoint
+from mmcv.runner import  load_checkpoint, _load_checkpoint, load_state_dict
 from ..builder import DISTILLER,build_distill_loss
-
+from collections import OrderedDict
 
 
 
@@ -20,7 +20,8 @@ class DetectionDistiller(BaseDetector):
                  teacher_cfg,
                  student_cfg,
                  distill_cfg=None,
-                 teacher_pretrained=None,):
+                 teacher_pretrained=None,
+                 init_student=False):
 
         super(DetectionDistiller, self).__init__()
         
@@ -34,8 +35,17 @@ class DetectionDistiller(BaseDetector):
         self.student= build_detector(student_cfg.model,
                                         train_cfg=student_cfg.get('train_cfg'),
                                         test_cfg=student_cfg.get('test_cfg'))
+        if init_student:
+            t_checkpoint = _load_checkpoint(teacher_pretrained)
+            all_name = []
+            for name, v in t_checkpoint["state_dict"].items():
+                if name.startswith("backbone."):
+                    continue
+                else:
+                    all_name.append((name, v))
 
-        
+            state_dict = OrderedDict(all_name)
+            load_state_dict(self.student, state_dict)
 
         self.distill_losses = nn.ModuleDict()
 
@@ -144,7 +154,7 @@ class DetectionDistiller(BaseDetector):
             for item_loss in item_loc.methods:
                 loss_name = item_loss.name
                 
-                student_loss[ loss_name] = self.distill_losses[loss_name](student_feat,teacher_feat)
+                student_loss[ loss_name] = self.distill_losses[loss_name](student_feat,teacher_feat,kwargs['gt_bboxes'], img_metas)
         
         
         return student_loss

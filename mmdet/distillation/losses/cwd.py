@@ -39,7 +39,8 @@ class ChannelWiseDivergence(nn.Module):
 
     def forward(self,
                 preds_S,
-                preds_T):
+                preds_T,
+                *args):
         """Forward function."""
         assert preds_S.shape[-2:] == preds_T.shape[-2:],'the output dim of teacher and student differ'
         N,C,W,H = preds_S.shape
