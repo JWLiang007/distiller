@@ -40,14 +40,19 @@ python tools/train.py configs/distillers/cwd/cwd_retina_rx101_64x4d_distill_reti
 bash tools/dist_train.sh configs/distillers/cwd/cwd_retina_rx101_64x4d_distill_retina_r50_fpn_2x_coco.py 8
 ```
 
-# Test
+## Transfer
+```
+# Tansfer the FGD model into mmdet model
+python pth_transfer.py --fgd_path $fgd_ckpt --output_path $new_mmdet_ckpt
+```
+## Test
 
 ```
 #single GPU
-python tools/test.py configs/distillers/cwd/cwd_retina_rx101_64x4d_distill_retina_r50_fpn_2x_coco.py $CHECKPOINT --eval bbox
+python tools/test.py configs/retinanet/retinanet_r50_fpn_2x_coco.py $new_mmdet_ckpt --eval bbox
 
 #multi GPU
-bash tools/dist_train.sh configs/distillers/cwd/cwd_retina_rx101_64x4d_distill_retina_r50_fpn_2x_coco.py $CHECKPOINT 8 --eval bbox
+bash tools/dist_test.sh configs/retinanet/retinanet_r50_fpn_2x_coco.py $new_mmdet_ckpt 8 --eval bbox
 ```
 
 # Lisence
